@@ -8,7 +8,7 @@ api_key = os.getenv("GEMINI_API_KEY")
 try:
     client = genai.Client(api_key=api_key)
     models_to_test = ["models/gemini-2.0-flash", "models/gemini-2.5-flash", "models/gemini-1.5-flash"]
-    
+
     for m in models_to_test:
         print(f"\n--- Testing model: {m} ---")
         try:
@@ -20,6 +20,6 @@ try:
             break
         except Exception as e:
             print(f"❌ Failed: {e}")
-            
+
 except Exception as e:
     print(f"Setup Error: {e}")

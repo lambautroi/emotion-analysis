@@ -3,13 +3,10 @@ import json
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
-# Configure Gemini Client
 api_key = os.getenv("GEMINI_API_KEY")
 
-# Create client lazily or immediately
 def get_client():
     if api_key and api_key != "YOUR_GEMINI_API_KEY_HERE":
         try:
@@ -44,19 +41,17 @@ def analyze_comment(comment):
     """
 
     try:
-        # Using Gemini 2.5 Flash for best performance and availability
         response = client.models.generate_content(
             model="models/gemini-2.5-flash",
             contents=prompt
         )
-        
-        # Clean response text
+
         clean_text = response.text.strip()
         if clean_text.startswith("```json"):
             clean_text = clean_text[7:-3].strip()
         elif clean_text.startswith("```"):
             clean_text = clean_text[3:-3].strip()
-            
+
         return json.loads(clean_text)
     except Exception as e:
         error_msg = str(e)
@@ -66,7 +61,7 @@ def analyze_comment(comment):
             reason = "Mô hình không khả dụng trong vùng của bạn hoặc tên mô hình sai."
         else:
             reason = f"Lỗi hệ thống: {error_msg}"
-            
+
         print(f"Gemini API Error: {error_msg}")
         return {
             "sentiment": "unknown",
