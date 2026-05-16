@@ -146,6 +146,13 @@ Trang chủ cung cấp trải nghiệm thân thiện với:
 4. Kết quả được bóc tách (Nhãn cảm xúc, Điểm số độ tin cậy) và lưu vào `SQLite`.
 5. Người dùng xem trực tiếp trên bảng điều khiển Web.
 
+## 3.5. Cấu trúc mã nguồn huấn luyện Modular
+
+Để thuận tiện cho việc đánh giá, theo dõi và bảo trì, toàn bộ quá trình huấn luyện Machine Learning được nhóm thiết kế dưới dạng **Modular Scripts** độc lập:
+- `1_prepare_data.py`: Đảm nhiệm việc tải dữ liệu, tiền xử lý và chuyển hóa thành Vector, tạo ra không gian dữ liệu chuẩn duy nhất (`data_prepared.pkl`).
+- Các file `2_train_nb.py`, `3_train_lr.py`, `4_train_rf.py`, `5_train_svm.py`: Tách biệt hoàn toàn việc huấn luyện từng thuật toán riêng lẻ. Tính module hóa này giúp dễ dàng thay đổi tham số hoặc thuật toán mà không ảnh hưởng toàn hệ thống.
+- `6_evaluate_models.py`: Đóng vai trò tổng hợp kết quả của 4 mô hình trên, kết hợp với sức mạnh của Gemini để xuất ra các bảng so sánh và biểu đồ trực quan một cách nhanh chóng.
+
 ---
 
 # 4. Kết quả thực nghiệm
