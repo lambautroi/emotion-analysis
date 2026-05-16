@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentimentAI - Phân Tích Cảm Xúc Thương Mại Điện Tử</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SentimentAI</h1>
+            <p>Phân tích cảm xúc bình luận bằng Google Gemini & Machine Learning</p>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                  <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' }}"></i>
+                  {{ message }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Dashboard Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Tổng số bình luận</div>
+                <div class="stat-value">{{ stats.total }}</div>
+            </div>
+            <div class="stat-card" style="border-left: 4px solid var(--positive);">
+                <div class="stat-label">Tích cực</div>
+                <div class="stat-value">{{ stats.positive }} ({{ stats.pos_percent }}%)</div>
+            </div>
+            <div class="stat-card" style="border-left: 4px solid var(--neutral);">
+                <div class="stat-label">Trung tính</div>
+                <div class="stat-value">{{ stats.neutral }} ({{ stats.neu_percent }}%)</div>
+            </div>
+            <div class="stat-card" style="border-left: 4px solid var(--negative);">
+                <div class="stat-label">Tiêu cực</div>
+                <div class="stat-value">{{ stats.negative }} ({{ stats.neg_percent }}%)</div>
+            </div>
+        </div>
+
+        <!-- Input Section -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 3rem;">
+            <section class="input-section" style="margin-bottom: 0;">
+                <h3 style="margin-bottom: 1.5rem; color: var(--primary);">Nhập thủ công</h3>
+                <form method="POST">
+                    <input type="text" name="comment" placeholder="Nhập bình luận sản phẩm..." required autocomplete="off">
+                    <select name="model_type" style="width: 100%; margin-top: 1rem; margin-bottom: 1rem; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--glass-bg); color: var(--text-light);">
+                        <option value="gemini">Google Gemini API (Chính xác cao)</option>
+                        <option value="ml">Machine Learning - SVM (Tốc độ nhanh, Offline)</option>
+                    </select>
+                    <button type="submit">
+                        <i class="fas fa-brain"></i> Phân Tích
+                    </button>
+                </form>
+            </section>
+
+            <section class="input-section" style="margin-bottom: 0;">
+                <h3 style="margin-bottom: 1.5rem; color: #a855f7;">Tải tệp lên (CSV/Excel)</h3>
+                <form action="/upload" method="POST" enctype="multipart/form-data">
+                    <input type="file" name="file" accept=".csv, .xlsx" required style="width: 100%; margin-bottom: 1rem; color: var(--text-muted);">
+                    <select name="model_type" style="width: 100%; margin-bottom: 1rem; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--glass-bg); color: var(--text-light);">
+                        <option value="gemini">Google Gemini API</option>
+                        <option value="ml">Machine Learning (Khuyên dùng cho batch)</option>
+                    </select>
+                    <button type="submit" style="background: #a855f7; width: 100%;">
+                        <i class="fas fa-file-upload"></i> Tải lên & Phân tích
+                    </button>
+                </form>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+                    * Lưu ý: File cần có cột tiêu đề là 'comment' hoặc 'content'.
+                </p>
+            </section>
+        </div>
+
+        <!-- Results Table -->
+        <section class="results-section">
+            <table>
+                <thead>
+                    <tr>
+                        <th width="30%">Bình luận</th>
+                        <th width="15%">Cảm xúc</th>
+                        <th width="10%">Điểm</th>
+                        <th width="35%">Lý do phân tích</th>
+                        <th width="10%" style="text-align: center;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in comments %}
+                    <tr>
+                        <td>{{ row[1] }}</td>
+                        <td>
+                            <span class="sentiment-badge badge-{{ row[2] }}">
+                                {{ "Tích cực" if row[2] == "positive" else ("Tiêu cực" if row[2] == "negative" else "Trung tính") }}
+                            </span>
+                        </td>
+                        <td class="score-text" style="color: {{ 'var(--positive)' if row[3] > 0.7 else ('var(--neutral)' if row[3] > 0.4 else 'var(--negative)') }}">
+                            {{ (row[3] * 100) | round | int }}%
+                        </td>
+                        <td class="reason-text">{{ row[4] }}</td>
+                        <td style="text-align: center;">
+                            <a href="{{ url_for('delete', comment_id=row[0]) }}" 
+                               onclick="return confirm('Bạn có chắc chắn muốn xóa bình luận này không?')"
+                               style="color: var(--negative); font-size: 1.1rem; transition: transform 0.2s;"
+                               onmouseover="this.style.transform='scale(1.2)'"
+                               onmouseout="this.style.transform='scale(1)'">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not comments %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                            Chưa có dữ liệu. Hãy nhập bình luận đầu tiên để bắt đầu!
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <footer style="margin-top: 4rem; text-align: center; border-top: 1px solid var(--glass-border); padding-top: 2rem; color: var(--text-muted); font-size: 0.875rem;">
+        &copy; 2026 SentimentAI Dashboard | Powered by Google Gemini & Scikit-Learn
+    </footer>
+</body>
+</html>
